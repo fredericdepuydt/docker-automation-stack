@@ -1,0 +1,66 @@
+version: '3.7'
+
+services:
+  openhab:
+    container_name: automation-openhab
+    image: openhab/openhab:latest
+    restart: always
+    networks:
+      web:
+      automation-net:
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - automation-openhab-conf:/openhab/conf
+      - automation-openhab-data:/openhab/userdata
+      - automation-openhab-addons:/openhab/addons
+    environment:
+      - USER_ID=999
+      - GROUP_ID=994
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+
+      - "traefik.http.routers.openhab.entrypoints=websecure"
+      - "traefik.http.routers.openhab.rule=Host(`openhab.${DOMAINNAME}`)"
+      - "traefik.http.routers.openhab.tls.certResolver=tls"
+      - "traefik.http.routers.openhab.service=openhab"
+      - "traefik.http.services.openhab.loadbalancer.server.port=8080"
+
+      - "traefik.http.routers.openhab-lan.entrypoints=websecure"
+      - "traefik.http.routers.openhab-lan.rule=Host(`openhab.${DOMAINNAME_LAN}`)"
+      - "traefik.http.routers.openhab-lan.tls.certResolver=tls-lan"
+      - "traefik.http.routers.openhab-lan.service=openhab"
+      - "traefik.http.services.openhab-lan.loadbalancer.server.port=8080"
+
+  mqtt:
+    container_name: automation-mqtt
+    image: eclipse-mosquitto:latest
+    restart: always
+    networks:
+      automation-net:
+    volumes:
+      - automation-mqtt-conf:/mosquitto/config
+      - automation-mqtt-data:/mosquitto/data
+      - automation-mqtt-log:/mosquitto/log
+
+networks:
+  web:
+    external: true
+  automation-net:
+    name: automation-net
+    driver: bridge
+
+volumes:
+  automation-mqtt-conf:
+    name: automation-mqtt-conf
+  automation-mqtt-data:
+    name: automation-mqtt-data
+  automation-mqtt-log:
+    name: automation-mqtt-log
+  automation-openhab-conf:
+    name: automation-openhab-conf
+  automation-openhab-data:
+    name: automation-openhab-data
+  automation-openhab-addons:
+    name: automation-openhab-addons
