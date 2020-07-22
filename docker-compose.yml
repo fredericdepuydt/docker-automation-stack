@@ -2,18 +2,19 @@ version: '3.7'
 
 services:
   openhab:
-    container_name: automation-openhab
-    image: openhab/openhab:latest
+    container_name: openhab
+    image: openhab/openhab:2.5.2
     restart: always
     networks:
       web:
-      automation-net:
+      automation:
+      dns:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - automation-openhab-conf:/openhab/conf
-      - automation-openhab-data:/openhab/userdata
-      - automation-openhab-addons:/openhab/addons
+      - openhab-conf:/openhab/conf
+      - openhab-data:/openhab/userdata
+      - openhab-addons:/openhab/addons
     environment:
       - USER_ID=999
       - GROUP_ID=994
@@ -27,40 +28,68 @@ services:
       - "traefik.http.routers.openhab.service=openhab"
       - "traefik.http.services.openhab.loadbalancer.server.port=8080"
 
-      - "traefik.http.routers.openhab-lan.entrypoints=websecure"
-      - "traefik.http.routers.openhab-lan.rule=Host(`openhab.${DOMAINNAME_LAN}`)"
-      - "traefik.http.routers.openhab-lan.tls.certResolver=tls-lan"
-      - "traefik.http.routers.openhab-lan.service=openhab"
-      - "traefik.http.services.openhab-lan.loadbalancer.server.port=8080"
-
   mqtt:
-    container_name: automation-mqtt
+    container_name: mqtt
     image: eclipse-mosquitto:latest
     restart: always
+    ports:
+      - 1883:1883
     networks:
-      automation-net:
+      automation:
+      dns:
     volumes:
-      - automation-mqtt-conf:/mosquitto/config
-      - automation-mqtt-data:/mosquitto/data
-      - automation-mqtt-log:/mosquitto/log
+      - mqtt-conf:/mosquitto/config
+      - mqtt-data:/mosquitto/data
+      - mqtt-log:/mosquitto/log
+  
+  z-way:
+    container_name: z-way
+    build: ./z-way
+    restart: always
+    devices:
+      - /dev/ttyAMA0:/dev/ttyAMA0
+    networks:
+      web:
+      automation:
+      dns:
+    volumes:
+      - z-way-conf:/opt/z-way-server
+      - z-way-log:/var/log/z-way-server
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+
+      - "traefik.http.routers.z-way.entrypoints=websecure"
+      - "traefik.http.routers.z-way.rule=Host(`z-way.${DOMAINNAME}`)"
+      - "traefik.http.routers.z-way.tls.certResolver=tls"
+      - "traefik.http.routers.z-way.service=z-way"
+      - "traefik.http.services.z-way.loadbalancer.server.port=8083"
 
 networks:
   web:
     external: true
-  automation-net:
-    name: automation-net
+  automation:
+    name: automation
     driver: bridge
+  dns:
+    external: true
 
 volumes:
-  automation-mqtt-conf:
-    name: automation-mqtt-conf
-  automation-mqtt-data:
-    name: automation-mqtt-data
-  automation-mqtt-log:
-    name: automation-mqtt-log
-  automation-openhab-conf:
+  mqtt-conf:
+    name: mqtt-conf
+  mqtt-data:
+    name: mqtt-data
+  mqtt-log:
+    name: mqtt-log
+
+  z-way-conf:
+    name: z-way-conf
+  z-way-log:
+    name: z-way-log
+
+  openhab-conf:
     name: automation-openhab-conf
-  automation-openhab-data:
+  openhab-data:
     name: automation-openhab-data
-  automation-openhab-addons:
+  openhab-addons:
     name: automation-openhab-addons

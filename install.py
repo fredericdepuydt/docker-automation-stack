@@ -1,21 +1,26 @@
-#!/bin/sh
+#!/usr/bin/env python3
+
 ############################################################################
 ## Raspberry-Pi installation script                                       ##
 ## Author: Frederic Depuydt                                               ##
 ## Mail: frederic.depuydt@outlook.com                                     ##
 ##                                                                        ##
-## Executing this script requires the 'depuydt' shell libraries           ##
+## Executing this script requires the 'depuydt' python libraries          ##
 ############################################################################
 
 ## INCLUDES
-. /usr/local/lib/depuydt/sh/echoes.sh
+import sys
+sys.path.insert(1, '/usr/local/lib/depuydt/python/')
+
+from echo import echo
+from docker import docker
+from environment import environment
 
 ## TITLE
-echo_section "DOCKER DEPLOYING:" "Automation Stack (Installing)"
+echo.section("DOCKER DEPLOYING", "Automation Stack (Installing)");
 
-# Creating external networks
-if [ -z "$(docker network list -f name=^web$ -q)" ]; then docker network create web; fi
+## Checking external networks
+docker.network.exists("web");
 
 ## Creating the volumes, networks and containers
-docker-compose up --build --no-start
-
+docker.compose.up("--build --no-start");
