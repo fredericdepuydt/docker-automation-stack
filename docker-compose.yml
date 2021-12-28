@@ -3,21 +3,25 @@ version: '3.7'
 services:
   openhab:
     container_name: openhab
-    image: openhab/openhab:2.5.2
-    restart: always
+    build: ./build/openhab
+    image: openhab
+    restart: unless-stopped
     networks:
       web:
       automation:
-      dns:
+        ipv4_address: 192.168.5.134
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - openhab-conf:/openhab/conf
-      - openhab-data:/openhab/userdata
-      - openhab-addons:/openhab/addons
+      - /etc/hosts:/etc/hosts:ro
+      - ./config/openhab/conf:/openhab/conf
+      - ./config/openhab/userdata:/openhab/userdata
+      #- openhab-data:/openhab/userdata
+      - ./config/openhab/addons:/openhab/addons
     environment:
-      - USER_ID=999
-      - GROUP_ID=994
+      - TZ=${TZ}
+      - USER_ID=${PUID}
+      - GROUP_ID=${PGID}
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
@@ -30,48 +34,161 @@ services:
 
   mqtt:
     container_name: mqtt
-    image: eclipse-mosquitto:latest
-    restart: always
-    ports:
-      - 1883:1883
+    image: eclipse-mosquitto:2.0.14
+    restart: unless-stopped
     networks:
       automation:
-      dns:
+        ipv4_address: 192.168.5.129
+    environment:
+      - TZ=${TZ}
     volumes:
-      - mqtt-conf:/mosquitto/config
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./config/mqtt:/mosquitto/config
       - mqtt-data:/mosquitto/data
       - mqtt-log:/mosquitto/log
   
   z-way:
     container_name: z-way
-    build: ./z-way
-    restart: always
+    build: ./build/z-way
+    image: z-way:3.1.4
+    restart: unless-stopped
     devices:
-      - /dev/ttyAMA0:/dev/ttyAMA0
+      - /dev/ttyAMA0:/dev/ttyAMA0 # z-wave (Razberry)
     networks:
       web:
       automation:
-      dns:
+        ipv4_address: 192.168.5.135
+    environment:
+      - TZ=${TZ}
     volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
       - z-way-conf:/opt/z-way-server
       - z-way-log:/var/log/z-way-server
+      - ./build/z-way/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
 
       - "traefik.http.routers.z-way.entrypoints=websecure"
+      - "traefik.http.routers.traefik.middlewares=chain-oauth"
       - "traefik.http.routers.z-way.rule=Host(`z-way.${DOMAINNAME}`)"
       - "traefik.http.routers.z-way.tls.certResolver=tls"
       - "traefik.http.routers.z-way.service=z-way"
       - "traefik.http.services.z-way.loadbalancer.server.port=8083"
 
+  node-red:
+    container_name: node-red
+    image: nodered/node-red:1.2.3-12
+    restart: unless-stopped
+    networks:
+      web:
+      automation:
+        ipv4_address: 192.168.5.131
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./config/nodered:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+
+      - "traefik.http.routers.node-red.entrypoints=websecure"
+      - "traefik.http.routers.traefik.middlewares=chain-oauth"
+      - "traefik.http.routers.node-red.rule=Host(`node-red.${DOMAINNAME}`)"
+      - "traefik.http.routers.node-red.tls.certResolver=tls"
+      - "traefik.http.routers.node-red.service=node-red"
+
+      - "traefik.http.services.node-red.loadbalancer.server.port=1880"
+
+  velserver:
+    container_name: velserver
+    build: ./build/velserver
+    image: velserver:1.0.1
+    restart: unless-stopped    
+    networks:
+      automation:
+        ipv4_address: 192.168.5.130
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0 # Velbus RSUSB Module
+    command: /opt/velbus/velserv -v -v -v -v -v
+
+  influxdb:
+    container_name: influxdb
+    image: influxdb:1.8.6
+    restart: unless-stopped
+    networks:
+      automation:
+        ipv4_address: 192.168.5.132
+    environment:
+      TZ: ${TZ}
+      INFLUXDB_DB: openhab
+      INFLUXDB_USER: openhab
+      INFLUXDB_USER_PASSWORD: 1234
+      #INFLUXDB_DB: ${INFLUXDB_DATABASE}
+      #INFLUXDB_USER: ${INFLUXDB_USERNAME}
+      #INFLUXDB_USER_PASSWORD: ${INFLUXDB_PASSWORD}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./config/influxdb:/etc/influxdb
+      - influxdb-data:/var/lib/influxdb
+
+  grafana:
+    container_name: grafana
+    build: ./build/grafana
+    image: grafana
+    restart: unless-stopped
+    user: "root"
+    environment:
+      TZ: ${TZ}   
+      GF_INSTALL_PLUGINS: pr0ps-trackmap-panel   
+      GF_SECURITY_ADMIN_USER: openhab
+      GF_SECURITY_ADMIN_PASSWORD: 1234
+    networks:
+      web:
+      automation:
+        ipv4_address: 192.168.5.133
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./config/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+      - ./config/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml      
+      - grafana-data:/var/lib/grafana
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.traefik.middlewares=chain-oauth"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.${DOMAINNAME}`)"
+      - "traefik.http.routers.grafana.tls.certResolver=tls"
+      - "traefik.http.routers.grafana.service=grafana"
+
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+
+  python:
+    container_name: python
+    build: ./build/python
+    restart: "no"
+    networks:
+      automation:
+    volumes:
+      - ./build/python/scripts:/usr/src/app
+
+
 networks:
   web:
     external: true
   automation:
-    name: automation
-    driver: bridge
-  dns:
     external: true
 
 volumes:
@@ -88,8 +205,17 @@ volumes:
     name: z-way-log
 
   openhab-conf:
-    name: automation-openhab-conf
+    name: openhab-conf
   openhab-data:
-    name: automation-openhab-data
+    name: openhab-data
   openhab-addons:
-    name: automation-openhab-addons
+    name: openhab-addons
+
+  node-red-data:
+    name: node-red-data
+
+  influxdb-data:
+    name: influxdb-data
+
+  grafana-data:
+    name: grafana-data

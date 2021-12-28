@@ -1,1 +1,12 @@
-export/
+# Ignore OpenVPN client configs
+*.ovpn
+export
+
+# Ignore Python cache files
+__pycache__
+
+# Ignore environment files
+.env
+
+# Ignore all config files
+/config

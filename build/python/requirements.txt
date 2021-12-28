@@ -1,0 +1,2 @@
+influxdb
+-e git://github.com/fredericdepuydt/python-libraries.git#egg=depuydt
