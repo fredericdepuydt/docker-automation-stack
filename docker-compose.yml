@@ -16,7 +16,6 @@ services:
       - /etc/hosts:/etc/hosts:ro
       - ./config/openhab/conf:/openhab/conf
       - ./config/openhab/userdata:/openhab/userdata
-      #- openhab-data:/openhab/userdata
       - ./config/openhab/addons:/openhab/addons
     environment:
       - TZ=${TZ}
@@ -150,9 +149,10 @@ services:
     user: "root"
     environment:
       TZ: ${TZ}   
-      GF_INSTALL_PLUGINS: pr0ps-trackmap-panel   
-      GF_SECURITY_ADMIN_USER: openhab
-      GF_SECURITY_ADMIN_PASSWORD: 1234
+      GF_INSTALL_PLUGINS: pr0ps-trackmap-panel
+      # Only required for initial setup
+      #GF_SECURITY_ADMIN_USER: admin
+      #GF_SECURITY_ADMIN_PASSWORD: password
     networks:
       web:
       automation:
@@ -160,9 +160,8 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./config/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
-      - ./config/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml      
-      - grafana-data:/var/lib/grafana
+      - ./config/grafana/etc/grafana:/etc/grafana
+      - ./config/grafana/var/lib/grafana:/var/lib/grafana
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
