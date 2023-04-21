@@ -6,6 +6,8 @@ services:
     build: ./build/openhab
     image: openhab
     restart: unless-stopped
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0 # P1 Smart Meter (Fluvius)
     networks:
       web:
       automation:
@@ -21,15 +23,6 @@ services:
       - TZ=${TZ}
       - USER_ID=${PUID}
       - GROUP_ID=${PGID}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=web"
-
-      - "traefik.http.routers.openhab.entrypoints=websecure"
-      - "traefik.http.routers.openhab.rule=Host(`openhab.${DOMAINNAME}`)"
-      - "traefik.http.routers.openhab.tls.certResolver=tls"
-      - "traefik.http.routers.openhab.service=openhab"
-      - "traefik.http.services.openhab.loadbalancer.server.port=8080"
 
   mqtt:
     container_name: mqtt
@@ -50,7 +43,6 @@ services:
   z-way:
     container_name: z-way
     build: ./build/z-way
-    image: z-way:3.1.4
     restart: unless-stopped
     devices:
       - /dev/ttyAMA0:/dev/ttyAMA0 # z-wave (Razberry)
@@ -66,20 +58,10 @@ services:
       - z-way-conf:/opt/z-way-server
       - z-way-log:/var/log/z-way-server
       - ./build/z-way/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=web"
-
-      - "traefik.http.routers.z-way.entrypoints=websecure"
-      - "traefik.http.routers.traefik.middlewares=chain-oauth"
-      - "traefik.http.routers.z-way.rule=Host(`z-way.${DOMAINNAME}`)"
-      - "traefik.http.routers.z-way.tls.certResolver=tls"
-      - "traefik.http.routers.z-way.service=z-way"
-      - "traefik.http.services.z-way.loadbalancer.server.port=8083"
 
   node-red:
     container_name: node-red
-    image: nodered/node-red:1.2.3-12
+    build: ./build/node-red
     restart: unless-stopped
     networks:
       web:
@@ -91,23 +73,12 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./config/nodered:/data
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=web"
-
-      - "traefik.http.routers.node-red.entrypoints=websecure"
-      - "traefik.http.routers.traefik.middlewares=chain-oauth"
-      - "traefik.http.routers.node-red.rule=Host(`node-red.${DOMAINNAME}`)"
-      - "traefik.http.routers.node-red.tls.certResolver=tls"
-      - "traefik.http.routers.node-red.service=node-red"
-
-      - "traefik.http.services.node-red.loadbalancer.server.port=1880"
 
   velserver:
     container_name: velserver
     build: ./build/velserver
     image: velserver:1.0.1
-    restart: unless-stopped    
+    restart: unless-stopped
     networks:
       automation:
         ipv4_address: 192.168.5.130
@@ -120,68 +91,30 @@ services:
       - /dev/ttyACM0:/dev/ttyACM0 # Velbus RSUSB Module
     command: /opt/velbus/velserv -v -v -v -v -v
 
-  influxdb:
-    container_name: influxdb
-    image: influxdb:1.8.6
+  telegraf:
+    container_name: telegraf
+    image: telegraf:1.22.3
     restart: unless-stopped
+    user: 1000:995
     networks:
       automation:
-        ipv4_address: 192.168.5.132
+        ipv4_address: 192.168.5.136
     environment:
-      TZ: ${TZ}
-      INFLUXDB_DB: openhab
-      INFLUXDB_USER: openhab
-      INFLUXDB_USER_PASSWORD: 1234
-      #INFLUXDB_DB: ${INFLUXDB_DATABASE}
-      #INFLUXDB_USER: ${INFLUXDB_USERNAME}
-      #INFLUXDB_USER_PASSWORD: ${INFLUXDB_PASSWORD}
+      TZ: ${TZ} 
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./config/influxdb:/etc/influxdb
-      - influxdb-data:/var/lib/influxdb
+      - ./config/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock
 
-  grafana:
-    container_name: grafana
-    build: ./build/grafana
-    image: grafana
-    restart: unless-stopped
-    user: "root"
-    environment:
-      TZ: ${TZ}   
-      GF_INSTALL_PLUGINS: pr0ps-trackmap-panel
-      # Only required for initial setup
-      #GF_SECURITY_ADMIN_USER: admin
-      #GF_SECURITY_ADMIN_PASSWORD: password
-    networks:
-      web:
-      automation:
-        ipv4_address: 192.168.5.133
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
-      - ./config/grafana/etc/grafana:/etc/grafana
-      - ./config/grafana/var/lib/grafana:/var/lib/grafana
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=web"
-
-      - "traefik.http.routers.grafana.entrypoints=websecure"
-      - "traefik.http.routers.traefik.middlewares=chain-oauth"
-      - "traefik.http.routers.grafana.rule=Host(`grafana.${DOMAINNAME}`)"
-      - "traefik.http.routers.grafana.tls.certResolver=tls"
-      - "traefik.http.routers.grafana.service=grafana"
-
-      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-
-  python:
-    container_name: python
-    build: ./build/python
-    restart: "no"
-    networks:
-      automation:
-    volumes:
-      - ./build/python/scripts:/usr/src/app
+  #python:
+  #  container_name: python
+  #  build: ./build/python
+  #  restart: "no"
+  #  networks:
+  #    automation:
+  #  volumes:
+  #    - ./build/python/scripts:/usr/src/app
 
 
 networks:
@@ -191,8 +124,6 @@ networks:
     external: true
 
 volumes:
-  mqtt-conf:
-    name: mqtt-conf
   mqtt-data:
     name: mqtt-data
   mqtt-log:
@@ -203,18 +134,5 @@ volumes:
   z-way-log:
     name: z-way-log
 
-  openhab-conf:
-    name: openhab-conf
-  openhab-data:
-    name: openhab-data
-  openhab-addons:
-    name: openhab-addons
-
-  node-red-data:
-    name: node-red-data
-
   influxdb-data:
     name: influxdb-data
-
-  grafana-data:
-    name: grafana-data

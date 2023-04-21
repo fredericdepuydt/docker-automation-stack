@@ -1,4 +1,4 @@
-FROM openhab/openhab:3.2.0.M5
+FROM openhab/openhab:3.4.1
 LABEL maintainer="Frederic Depuydt <frederic.depuydt@outlook.com>"
 RUN apt-get update && \
     apt-get install -y dnsmasq && \
