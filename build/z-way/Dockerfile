@@ -18,18 +18,18 @@
 
 
 
-FROM multiarch/debian-debootstrap:armhf-buster-slim
+FROM multiarch/debian-debootstrap:armhf-bullseye-slim
 
 LABEL maintainer="Frederic Depuydt <frederic.depuydt@outlook.com>"
-LABEL release-date="2021-12-11"
+LABEL release-date="2023-07-28"
 
 ENV ARCH armhf
 
 RUN apt-get update
 RUN apt-get install -y supervisor ca-certificates
 
-RUN wget -q -O /tmp/z-way-3.2.2_armhf.deb https://storage.z-wave.me/z-way-server/z-way-3.2.2_armhf.deb
-RUN apt install -y /tmp/z-way-3.2.2_armhf.deb
+RUN wget -q -O /tmp/z-way.deb https://storage.z-wave.me/z-way-server/z-way-4.1.1_armhf.deb
+RUN apt install -y /tmp/z-way.deb
 
 RUN apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

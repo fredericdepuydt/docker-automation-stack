@@ -107,14 +107,14 @@ services:
       - ./config/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock
 
-  #python:
-  #  container_name: python
-  #  build: ./build/python
-  #  restart: "no"
-  #  networks:
-  #    automation:
-  #  volumes:
-  #    - ./build/python/scripts:/usr/src/app
+  python:
+    container_name: python
+    build: ./build/python
+    restart: "no"
+    networks:
+      automation:
+    volumes:
+      - ./build/python/scripts:/usr/src/app
 
 
 networks:
