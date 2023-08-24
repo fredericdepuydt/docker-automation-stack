@@ -16,17 +16,16 @@
 #     sudo apt-get autoremove -y
 #
 
-
-
 FROM multiarch/debian-debootstrap:armhf-bullseye-slim
 
+
 LABEL maintainer="Frederic Depuydt <frederic.depuydt@outlook.com>"
-LABEL release-date="2023-07-28"
+LABEL release-date="2023-08-09"
 
 ENV ARCH armhf
 
 RUN apt-get update
-RUN apt-get install -y supervisor ca-certificates
+RUN apt-get install -y supervisor ca-certificates wget
 
 RUN wget -q -O /tmp/z-way.deb https://storage.z-wave.me/z-way-server/z-way-4.1.1_armhf.deb
 RUN apt install -y /tmp/z-way.deb

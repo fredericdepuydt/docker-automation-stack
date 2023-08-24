@@ -30,6 +30,7 @@ client.switch_database('openhab')
 
 sql = "SELECT * FROM " + str(src)
 results = list(client.query(sql).get_points())
+print(str(len(results)) + " entries found for " + src)
 
 data = []
 
@@ -49,6 +50,9 @@ for result in results:
 
 client.write_points(data)
 
-#sql = "DROP SERIES FROM " + src
-#client.query(sql)
+
+print(str(len(data)) + " entries written to " + dst)
+
+sql = "DROP SERIES FROM " + src
+client.query(sql)
         
