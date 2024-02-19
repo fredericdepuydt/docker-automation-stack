@@ -16,18 +16,23 @@
 #     sudo apt-get autoremove -y
 #
 
-FROM multiarch/debian-debootstrap:armhf-bullseye-slim
+#### NOTE 2
+# Requires 'buster' for packages like:
+#  - libssl1.1
+#  - libwebsockets8
+#  - libwebsockets16
+FROM debian:buster-slim
 
 
 LABEL maintainer="Frederic Depuydt <frederic.depuydt@outlook.com>"
-LABEL release-date="2023-08-09"
+LABEL release-date="2024-02-18"
 
 ENV ARCH armhf
 
 RUN apt-get update
 RUN apt-get install -y supervisor ca-certificates wget
 
-RUN wget -q -O /tmp/z-way.deb https://storage.z-wave.me/z-way-server/z-way-4.1.1_armhf.deb
+RUN wget -q -O /tmp/z-way.deb https://storage.z-wave.me/z-way-server/z-way-4.1.2_armhf.deb
 RUN apt install -y /tmp/z-way.deb
 
 RUN apt-get clean \
