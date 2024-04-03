@@ -55,7 +55,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - z-way-conf:/opt/z-way-server
+      - ./config/z-way:/opt/z-way-server
       - z-way-log:/var/log/z-way-server
       - ./build/z-way/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
 
@@ -129,8 +129,6 @@ volumes:
   mqtt-log:
     name: mqtt-log
 
-  z-way-conf:
-    name: z-way-conf
   z-way-log:
     name: z-way-log
 
