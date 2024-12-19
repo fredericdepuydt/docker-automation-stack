@@ -1,6 +1,6 @@
-FROM openhab/openhab:4.1.2
+FROM openhab/openhab:4.3.0
 LABEL maintainer="Frederic Depuydt <frederic.depuydt@outlook.com>"
-LABEL release-date="2024-04-01"
+LABEL release-date="2024-12-19"
 RUN apt-get update && \
     apt-get install -y dnsmasq && \
     apt-get clean && \
