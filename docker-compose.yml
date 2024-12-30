@@ -8,6 +8,7 @@ services:
     restart: unless-stopped
     devices:
       - /dev/ttyUSB0:/dev/ttyUSB0 # P1 Smart Meter (Fluvius)
+      - /dev/ttyAMA0:/dev/ttyAMA0 # Razberry (Z-Wave.me)
     networks:
       web:
       automation:
