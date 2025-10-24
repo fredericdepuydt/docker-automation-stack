@@ -58,24 +58,6 @@ services:
       - mqtt-data:/mosquitto/data
       - mqtt-log:/mosquitto/log
   
-  #z-way:
-  #  container_name: z-way
-  #  build: ./build/z-way
-  #  restart: unless-stopped
-  #  devices:
-  #    - /dev/ttyAMA0:/dev/ttyAMA0 # z-wave (Razberry)
-  #  networks:
-  #    automation:
-  #      ipv4_address: 192.168.5.135
-  #  environment:
-  #    - TZ=${TZ}
-  #  volumes:
-  #    - /etc/localtime:/etc/localtime:ro
-  #    - /etc/timezone:/etc/timezone:ro
-  #    - ./config/z-way:/opt/z-way-server
-  #    - z-way-log:/var/log/z-way-server
-  #    - ./build/z-way/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
-
   node-red:
     container_name: node-red
     build: ./build/node-red
@@ -106,22 +88,6 @@ services:
       - /dev/ttyACM0:/dev/ttyACM0 # Velbus RSUSB Module
     command: /opt/velbus/velserv -v -v -v -v -v
     
-
-  #modbus-tcp-proxy:
-  #  container_name: modbus-tcp-proxy
-  #  build: ./build/modbus-tcp-proxy
-  #  restart: unless-stopped
-  #  networks:
-  #    automation:
-  #      ipv4_address: 192.168.5.158
-  #  environment:
-  #    - TZ=${TZ}
-  #  volumes:
-  #    - /etc/localtime:/etc/localtime:ro
-  #    - /etc/timezone:/etc/timezone:ro
-  #    - ./config/modbus-tcp-proxy/config.yml:/config/modbus-proxy.yml
-
-
   #telegraf:
   #  container_name: telegraf
   #  image: telegraf:1.22.3
